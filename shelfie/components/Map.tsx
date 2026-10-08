@@ -103,39 +103,51 @@ export default function Map({ offers, center }: { offers: SearchOffer[], center:
         popupAnchor: [0, -36]
       });
 
+      // Create safe DOM element for popup to prevent XSS
+      const container = document.createElement('div');
+      container.style.padding = '4px';
+      container.style.minWidth = '160px';
+
+      const prodNameEl = document.createElement('div');
+      prodNameEl.style.fontWeight = 'bold';
+      prodNameEl.style.marginBottom = '4px';
+      prodNameEl.style.color = '#f1f5f9';
+      prodNameEl.textContent = offer.productName;
+      container.appendChild(prodNameEl);
+
+      const shopNameEl = document.createElement('div');
+      shopNameEl.style.color = '#94a3b8';
+      shopNameEl.style.fontSize = '12px';
+      shopNameEl.style.marginBottom = '2px';
+      shopNameEl.textContent = offer.shopName;
+      container.appendChild(shopNameEl);
+
+      const metaEl = document.createElement('div');
+      metaEl.style.color = '#64748b';
+      metaEl.style.fontSize = '11px';
+      metaEl.style.marginBottom = '10px';
+      metaEl.textContent = `${offer.walkMinutes} min walk · ₹${offer.price.toLocaleString('en-IN')}`;
+      container.appendChild(metaEl);
+
+      const btn = document.createElement('button');
+      btn.style.width = '100%';
+      btn.style.padding = '6px 8px';
+      btn.style.fontSize = '12px';
+      btn.style.fontWeight = '600';
+      btn.style.borderRadius = '8px';
+      btn.style.cursor = 'pointer';
+      btn.style.border = 'none';
+      btn.style.background = isGreen ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'rgba(245,158,11,0.15)';
+      btn.style.color = isGreen ? 'white' : '#f59e0b';
+      btn.textContent = isGreen ? '🔒 Reserve' : '💬 Request';
+      btn.onclick = () => {
+        router.push(`/${isGreen ? 'reserve' : 'request'}?s=${encodeURIComponent(offer.shopId)}&i=${encodeURIComponent(offer.inventoryId)}`);
+      };
+      container.appendChild(btn);
+
       const m = L.marker([offer.location.lat, offer.location.lng], { icon: customIcon })
         .addTo(mapRef.current!)
-        .bindPopup(`
-          <div style="padding: 4px; min-width: 160px;">
-            <div style="font-weight: bold; margin-bottom: 4px; color: #f1f5f9;">${offer.productName}</div>
-            <div style="color: #94a3b8; font-size: 12px; margin-bottom: 2px;">${offer.shopName}</div>
-            <div style="color: #64748b; font-size: 11px; margin-bottom: 10px;">${offer.walkMinutes} min walk · ₹${offer.price.toLocaleString('en-IN')}</div>
-            <button
-              data-offer-inv="${offer.inventoryId}"
-              data-offer-shop="${offer.shopId}"
-              data-offer-type="${isGreen ? 'reserve' : 'request'}"
-              style="width: 100%; padding: 6px 8px; font-size: 12px; font-weight: 600; border-radius: 8px; cursor: pointer; border: none; background: ${isGreen ? 'linear-gradient(135deg,#6366f1,#8b5cf6)' : 'rgba(245,158,11,0.15)'}; color: ${isGreen ? 'white' : '#f59e0b'};">
-              ${isGreen ? '🔒 Reserve' : '💬 Request'}
-            </button>
-          </div>
-        `);
-
-      // G-04 fix: use popupopen event + data attributes instead of inline onclick string
-      m.on('popupopen', (e: any) => {
-        // We must scope the querySelector to the popup node because the popup is just being added to the DOM
-        const popupNode = e?.popup?._contentNode as HTMLElement;
-        if (!popupNode) return;
-        
-        const btn = popupNode.querySelector(`[data-offer-inv="${offer.inventoryId}"]`) as HTMLElement | null;
-        if (!btn) return;
-        
-        btn.onclick = () => {
-          const type = btn.dataset.offerType;
-          const shop = btn.dataset.offerShop;
-          const inv = btn.dataset.offerInv;
-          router.push(`/${type}?s=${shop}&i=${inv}`);
-        };
-      });
+        .bindPopup(container);
       
       markersRef.current.push(m);
     });

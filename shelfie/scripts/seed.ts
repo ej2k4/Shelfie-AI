@@ -64,10 +64,14 @@ db.exec(`
     remainingINR REAL NOT NULL, status TEXT NOT NULL DEFAULT 'ACTIVE',
     startAt TEXT NOT NULL, endAt TEXT NOT NULL
   );
+  CREATE TABLE IF NOT EXISTS events (
+    id TEXT PRIMARY KEY, type TEXT NOT NULL, productKey TEXT, shopId TEXT,
+    areaId TEXT, ts TEXT NOT NULL
+  );
 `);
 
 // ── Clear existing data ──────────────────────────────────────────────────────
-db.exec(`DELETE FROM notifications; DELETE FROM requests; DELETE FROM reservations; DELETE FROM inventory; DELETE FROM shops; DELETE FROM campaigns;`);
+db.exec(`DELETE FROM events; DELETE FROM notifications; DELETE FROM requests; DELETE FROM reservations; DELETE FROM inventory; DELETE FROM shops; DELETE FROM campaigns;`);
 console.log("Cleared existing data.");
 
 // ── Helpers ──────────────────────────────────────────────────────────────────

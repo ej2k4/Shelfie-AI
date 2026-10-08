@@ -141,6 +141,14 @@ function initSchema(db: Database.Database) {
       startAt TEXT NOT NULL,
       endAt TEXT NOT NULL
     );
+
+    CREATE TABLE IF NOT EXISTS sessions (
+      id TEXT PRIMARY KEY,
+      userId TEXT NOT NULL,
+      role TEXT NOT NULL,
+      expiresAt TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS events (
       id TEXT PRIMARY KEY,
       type TEXT NOT NULL,

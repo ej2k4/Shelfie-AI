@@ -2,10 +2,13 @@
 // Simulated upgrade for demo mode. In production, replace with Razorpay subscription creation.
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { requireShopOwner } from "@/lib/auth";
 
 export async function POST(req: NextRequest, { params }: { params: Promise<{ shopId: string }> }) {
   try {
     const { shopId } = await params;
+    
+    await requireShopOwner(shopId);
 
     // Only allow in demo mode
     const isDemoMode = process.env.DEMO_MODE === "true";
@@ -31,8 +34,12 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sho
         ? "Simulated payment (demo mode) — PRO plan activated"
         : "Upgrade successful",
     });
-  } catch (err) {
+  } catch (err: any) {
     console.error("[upgrade]", err);
+    if (err.message?.startsWith("Unauthorized") || err.message?.startsWith("Forbidden")) {
+      return NextResponse.json({ error: err.message }, { status: err.message.startsWith("Unauthorized") ? 401 : 403 });
+    }
     return NextResponse.json({ error: "Upgrade failed" }, { status: 500 });
   }
 }
+

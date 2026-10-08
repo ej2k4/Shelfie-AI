@@ -2,6 +2,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { rebalancePools } from "@/lib/inventory";
+import { getDb } from "@/lib/db";
+import { requireShopOwner } from "@/lib/auth";
 
 const schema = z.object({
   inventoryId: z.string().min(1),
@@ -14,7 +16,7 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sho
     const { shopId } = await params;
     const body = await req.json();
     const { inventoryId, onlineQty, offlineQty } = schema.parse(body);
-    const { getDb } = require("@/lib/db");
+    await requireShopOwner(shopId);
     const db = getDb();
     const current = db.prepare(`SELECT onlineQty, offlineQty FROM inventory WHERE id = ? AND shopId = ?`)
       .get(inventoryId, shopId) as any;
@@ -33,6 +35,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sho
     rebalancePools(inventoryId, shopId, onlineQty, offlineQty);
     return NextResponse.json({ success: true, onlineQty, offlineQty });
   } catch (err: any) {
+    if (err.message?.startsWith("Unauthorized") || err.message?.startsWith("Forbidden")) {
+      return NextResponse.json({ error: err.message }, { status: err.message.startsWith("Unauthorized") ? 401 : 403 });
+    }
     if (err.name === "ZodError") {
       return NextResponse.json({ error: "Invalid input", details: err.errors }, { status: 400 });
     }
