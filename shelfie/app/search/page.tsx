@@ -23,10 +23,29 @@ function SearchContent() {
   const [sort, setSort] = useState<"distance" | "price" | "open">("distance");
 
   useEffect(() => {
-    // For the prototype/demo, we hardcode the user's location to Koramangala, Bengaluru
-    // so that the seeded demo data is always within the 3km search radius,
-    // regardless of where in the world the user is testing it from.
-    setLocating(false);
+    // Attempt HTML5 Geolocation
+    if ("geolocation" in navigator) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          setLat(position.coords.latitude);
+          setLng(position.coords.longitude);
+          setLocating(false);
+        },
+        (error) => {
+          console.warn("Geolocation failed/denied, falling back to Koramangala demo location", error);
+          // Fallback to Koramangala, Bengaluru
+          setLat(12.9352);
+          setLng(77.6245);
+          setLocating(false);
+        },
+        { timeout: 10000, maximumAge: 60000 }
+      );
+    } else {
+      // Fallback
+      setLat(12.9352);
+      setLng(77.6245);
+      setLocating(false);
+    }
   }, []);
 
   const { data, isLoading } = useQuery<{ offers: SearchOffer[], total: number }>({

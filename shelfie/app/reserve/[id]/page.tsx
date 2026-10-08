@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { formatDistanceToNow } from "date-fns";
+import { CountdownTimer } from "@/components/CountdownTimer";
 
 export default function ReservationStatusPage() {
   const params = useParams();
@@ -11,7 +12,7 @@ export default function ReservationStatusPage() {
   const router = useRouter();
 
   // Poll every 3 seconds to catch status changes (like COLLECTED or EXPIRED)
-  const { data: res, isLoading } = useQuery({
+  const { data: res, isLoading, refetch } = useQuery({
     queryKey: ["reservation", id],
     queryFn: async () => {
       const resp = await fetch(`/api/reserve/${id}`);
@@ -21,23 +22,6 @@ export default function ReservationStatusPage() {
     refetchInterval: 3000,
   });
 
-  const [timeLeft, setTimeLeft] = useState("");
-
-  useEffect(() => {
-    if (!res || res.status !== "HELD") return;
-    const interval = setInterval(() => {
-      const end = new Date(res.expiresAt).getTime();
-      const now = Date.now();
-      if (end < now) {
-        setTimeLeft("Expired");
-      } else {
-        const mins = Math.floor((end - now) / 60000);
-        const secs = Math.floor(((end - now) % 60000) / 1000);
-        setTimeLeft(`${mins}:${secs.toString().padStart(2, '0')}`);
-      }
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [res]);
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (!res) return <div className="min-h-screen flex items-center justify-center">Not found</div>;
@@ -82,7 +66,9 @@ export default function ReservationStatusPage() {
               <div>
                 <div className="font-bold">{res.shopName}</div>
                 <div className="text-sm text-slate-400 mt-1">{res.shopAddress}</div>
-                <div className="text-xs text-indigo-400 mt-2 font-medium">Expires in: <span className="countdown-ring">{timeLeft}</span></div>
+                <div className="text-xs text-indigo-400 mt-2 font-medium">
+                  Expires in: <CountdownTimer expiresAt={res.expiresAt} onExpire={refetch} className="countdown-ring" />
+                </div>
               </div>
             </div>
 

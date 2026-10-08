@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useState, useEffect } from "react";
 import { formatDistanceToNow } from "date-fns";
 import { useSearchParams, useRouter } from "next/navigation";
+import { CountdownTimer } from "@/components/CountdownTimer";
 
 export default function ShopDashboard() {
   const router = useRouter();
@@ -249,7 +250,15 @@ export default function ShopDashboard() {
                 <div key={r.id} className="card bg-slate-800/80 border-slate-700">
                   <div className="flex justify-between items-start mb-2">
                     <span className="text-xs font-mono bg-slate-700 px-2 py-1 rounded text-slate-300">Code: {r.pickupCode}</span>
-                    <span className="text-xs text-slate-400">{formatDistanceToNow(new Date(r.createdAt))} ago</span>
+                    <span className="text-xs text-slate-400 flex flex-col items-end gap-1">
+                      <span>{formatDistanceToNow(new Date(r.createdAt))} ago</span>
+                      <span className="text-indigo-400 bg-indigo-400/10 px-2 py-0.5 rounded">
+                        <CountdownTimer 
+                          expiresAt={r.expiresAt} 
+                          onExpire={() => queryClient.invalidateQueries({ queryKey: ["shop-reservations", shopId] })} 
+                        />
+                      </span>
+                    </span>
                   </div>
                   <div className="font-bold">{r.productName}</div>
                   <div className="text-sm text-slate-400 flex justify-between mt-2">
