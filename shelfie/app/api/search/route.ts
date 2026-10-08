@@ -1,7 +1,7 @@
 // app/api/search/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { searchOffers } from "@/lib/search";
+import { searchOffers, deductCampaignClick } from "@/lib/search";
 import { applySponsoredSlot } from "@/lib/ranking";
 import { logEvent } from "@/lib/events";
 import { getDb } from "@/lib/db";
@@ -36,7 +36,12 @@ export async function GET(req: NextRequest) {
       areaIds: JSON.parse(c.areaIds) 
     }));
     
-    const rankedOffers = applySponsoredSlot(offers, campaigns);
+    const { offers: rankedOffers, sponsoredCampaignId } = applySponsoredSlot(offers, campaigns);
+
+    // Deduct CPC for sponsored impression (fire-and-forget)
+    if (sponsoredCampaignId) {
+      try { deductCampaignClick(sponsoredCampaignId); } catch { /* non-critical */ }
+    }
 
     // Log the search event
     logEvent("SEARCH", { productKey: args.q });
@@ -50,3 +55,4 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: "Search failed" }, { status: 500 });
   }
 }
+

@@ -149,6 +149,10 @@ function initSchema(db: Database.Database) {
       expiresAt TEXT NOT NULL
     );
 
+    CREATE INDEX IF NOT EXISTS idx_sessions_userId ON sessions(userId);
+    CREATE INDEX IF NOT EXISTS idx_campaigns_status ON campaigns(status);
+
+
     CREATE TABLE IF NOT EXISTS events (
       id TEXT PRIMARY KEY,
       type TEXT NOT NULL,
