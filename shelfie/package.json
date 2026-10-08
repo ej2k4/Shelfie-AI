@@ -1,0 +1,35 @@
+{
+  "name": "shelfie",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --webpack",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@azure/cosmos": "^4.10.1",
+    "@tanstack/react-query": "^5.104.1",
+    "better-sqlite3": "^13.0.3",
+    "date-fns": "^4.4.0",
+    "leaflet": "^1.9.4",
+    "next": "16.3.8",
+    "ngeohash": "^0.6.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-leaflet": "^5.0.0",
+    "twilio": "^6.1.2",
+    "zod": "^4.6.5"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/better-sqlite3": "^9.6.0",
+    "@types/leaflet": "^1.9.22",
+    "@types/ngeohash": "^0.6.8",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "tailwindcss": "^4",
+    "typescript": "^5"
+  }
+}
