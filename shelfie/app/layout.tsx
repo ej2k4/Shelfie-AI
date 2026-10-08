@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { Providers } from "./providers";
 
 export const metadata: Metadata = {
   title: "Shelfie — Live Local Inventory Near You",
@@ -9,13 +10,11 @@ export const metadata: Metadata = {
 };
 
 export const viewport = {
-  themeColor: "#0b0f1a",
+  themeColor: "#0c0d10",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
 };
-
-import { Providers } from "./providers";
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

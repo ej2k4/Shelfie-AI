@@ -143,6 +143,7 @@ export function searchOffers(args: SearchArgs): SearchOffer[] {
       freshnessMins,
       reliability: row.reliability,
       plan: plan.id as "FREE" | "PRO" | "ASSOCIATION",
+      imageEmoji: row.imageEmoji || "📦",
     });
   }
 

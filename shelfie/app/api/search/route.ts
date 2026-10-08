@@ -7,7 +7,7 @@ import { logEvent } from "@/lib/events";
 import { getDb } from "@/lib/db";
 
 const schema = z.object({
-  q: z.string().min(1).max(100),
+  q: z.string().min(0).max(100),
   lat: z.coerce.number().min(-90).max(90),
   lng: z.coerce.number().min(-180).max(180),
   radius: z.coerce.number().min(0.5).max(10).optional().default(3),
@@ -36,7 +36,7 @@ export async function GET(req: NextRequest) {
       areaIds: JSON.parse(c.areaIds) 
     }));
     
-    const { offers: rankedOffers, sponsoredCampaignId } = applySponsoredSlot(offers, campaigns);
+    const result = applySponsoredSlot(offers, campaigns) || { offers, sponsoredCampaignId: null }; const rankedOffers = result.offers; const sponsoredCampaignId = result.sponsoredCampaignId;
 
     // Deduct CPC for sponsored impression (fire-and-forget)
     if (sponsoredCampaignId) {
