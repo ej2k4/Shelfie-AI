@@ -2,7 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useState } from "react";
-import { AuthProvider } from "@/lib/auth";
+import { AuthProvider } from "@/lib/auth-context";
 import { CartProvider } from "@/lib/cart";
 
 export function Providers({ children }: { children: React.ReactNode }) {

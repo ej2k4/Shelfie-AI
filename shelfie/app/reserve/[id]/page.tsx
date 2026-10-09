@@ -24,7 +24,7 @@ export default function ReservationStatusPage() {
 
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center bg-[var(--bg-canvas)]"><PremiumLoader text="Retrieving hold..." /></div>;
-  if (!res) return <div className="min-h-screen flex items-center justify-center bg-[var(--bg-canvas)] text-[var(--text-tertiary)] font-medium">Not found</div>;
+  if (!res) return <div className="min-h-screen flex items-center justify-center bg-[var(--bg-canvas)] text-[var(--text-muted)] font-medium">Not found</div>;
 
   const effectiveStatus = res.status === 'HELD' && new Date(res.expiresAt) < new Date()
     ? 'EXPIRED' : res.status;
@@ -41,7 +41,7 @@ export default function ReservationStatusPage() {
         {effectiveStatus === "HELD" && (
           <div className="text-center">
             {/* Top Status Bar */}
-            <div className="bg-[var(--status-amber)] text-[var(--text-inverse)] py-3 px-6 flex items-center justify-center gap-2 text-sm font-bold tracking-wide">
+            <div className="bg-[var(--amber)] text-[var(--text-inverse)] py-3 px-6 flex items-center justify-center gap-2 text-sm font-bold tracking-wide">
               <span className="status-dot bg-white"></span> Active Hold
             </div>
             
@@ -53,7 +53,7 @@ export default function ReservationStatusPage() {
               </div>
             </div>
 
-            <div className="h-px bg-dashed border-b-2 border-dashed border-[var(--border-light)] mx-6 my-2"></div>
+            <div className="h-px bg-dashed border-b-2 border-dashed border-[var(--border-sm)] mx-6 my-2"></div>
 
             {/* Details */}
             <div className="px-6 py-8 bg-[var(--bg-canvas)]/30 text-left">
@@ -65,12 +65,12 @@ export default function ReservationStatusPage() {
                 <div className="font-bold text-lg whitespace-nowrap">₹{res.productPrice * res.qty}</div>
               </div>
 
-              <div className="bg-[var(--bg-surface)] border border-[var(--border-light)] rounded-[var(--radius-md)] p-4 flex items-start gap-3 shadow-[var(--shadow-xs)]">
-                <div className="w-8 h-8 rounded-full bg-[var(--bg-subtle)] border border-[var(--border-light)] flex items-center justify-center shrink-0">📍</div>
+              <div className="bg-[var(--bg-surface)] border border-[var(--border-sm)] rounded-[var(--radius-md)] p-4 flex items-start gap-3 shadow-[var(--shadow-xs)]">
+                <div className="w-8 h-8 rounded-full bg-[var(--bg-surface-2)] border border-[var(--border-sm)] flex items-center justify-center shrink-0">📍</div>
                 <div>
                   <div className="font-bold text-[0.95rem] text-[var(--text-primary)]">{res.shopName}</div>
                   <div className="text-[13px] text-[var(--text-secondary)] mt-0.5 line-clamp-2 leading-relaxed">{res.shopAddress}</div>
-                  <div className="text-[13px] font-bold mt-3 pt-3 border-t border-[var(--border-light)] text-[var(--status-amber)] flex items-center gap-1.5">
+                  <div className="text-[13px] font-bold mt-3 pt-3 border-t border-[var(--border-sm)] text-[var(--amber)] flex items-center gap-1.5">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     Expires in <CountdownTimer expiresAt={res.expiresAt} onExpire={refetch} className="countdown-ring ml-1" />
                   </div>
@@ -78,7 +78,7 @@ export default function ReservationStatusPage() {
               </div>
 
               <div className="meta text-center mt-6">
-                Show this code to the merchant.
+                Show this code to the merchant at the counter.
               </div>
             </div>
           </div>
@@ -86,7 +86,7 @@ export default function ReservationStatusPage() {
 
         {effectiveStatus === "COLLECTED" && (
           <div className="text-center space-y-6 py-12 px-6">
-            <div className="w-20 h-20 bg-[var(--status-green-bg)] text-[var(--status-green)] rounded-full flex items-center justify-center mx-auto mb-2 border border-[var(--status-green-border)] shadow-[var(--shadow-xs)]">
+            <div className="w-20 h-20 bg-[var(--green-bg)] text-[var(--green)] rounded-full flex items-center justify-center mx-auto mb-2 border border-[var(--green-border)] shadow-[var(--shadow-xs)]">
               <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
@@ -98,7 +98,7 @@ export default function ReservationStatusPage() {
 
         {(effectiveStatus === "EXPIRED" || effectiveStatus === "CANCELLED") && (
           <div className="text-center space-y-6 py-12 px-6">
-            <div className="w-20 h-20 bg-[var(--bg-subtle)] text-[var(--text-tertiary)] rounded-full flex items-center justify-center mx-auto mb-2 border border-[var(--border-medium)]">
+            <div className="w-20 h-20 bg-[var(--bg-surface-2)] text-[var(--text-muted)] rounded-full flex items-center justify-center mx-auto mb-2 border border-[var(--border-md)]">
               <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M6 18L18 6M6 6l12 12" />
               </svg>

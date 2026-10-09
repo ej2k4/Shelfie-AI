@@ -5,9 +5,7 @@ import L from "leaflet";
 import "leaflet/dist/leaflet.css";
 import type { SearchOffer } from "@/lib/types";
 
-// Alias the built-in Map before defining our component (prevents name collision)
-const NativeMap = globalThis.Map;
-type NativeMapType<K, V> = InstanceType<typeof NativeMap> & Map<K, V>;
+
 
 // Fix leaflet icon issues in Next.js
 delete (L.Icon.Default.prototype as any)._getIconUrl;
@@ -82,8 +80,7 @@ interface ShelfieMapProps {
 export default function ShelfieMap({ offers, center, hoveredId, onHover }: ShelfieMapProps) {
   const mapRef = useRef<L.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>(null);
-  // Use NativeMap alias to avoid conflicting with the component name
-  const markersMapRef = useRef<NativeMapType<string, L.Marker>>(new NativeMap<string, L.Marker>() as any);
+  const markersMapRef = useRef<Map<string, L.Marker>>(new Map());
 
   // Initialise map once
   useEffect(() => {

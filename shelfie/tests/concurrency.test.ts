@@ -9,7 +9,7 @@ test("Concurrency: 50 simultaneous bulk requests for an item with 5 stock", asyn
   // 1. Ensure we know the target item ID (from seed data: e.g. iPhone Charger in Koramangala)
   // Hardcoding one that has 5 onlineQty in the seed: 'inv_km_01_02'
   const shopId = "shop_km_01";
-  const inventoryId = "inv_km_01_02"; // 65W Charger
+  const inventoryId = "inv_shop_km_01_02"; // 65W Charger
   
   // Create 50 concurrent requests
   const requests = Array.from({ length: 50 }).map((_, idx) => {
@@ -48,6 +48,6 @@ test("Concurrency: 50 simultaneous bulk requests for an item with 5 stock", asyn
   console.log(`Out of Stock: ${outOfStock.length}`);
 
   // Assert exactly 5 successes (if the initial stock was 5)
-  // expect(successes.length).toBeLessThanOrEqual(5); 
-  // expect(outOfStock.length).toBeGreaterThanOrEqual(45);
+  expect(successes.length).toBeLessThanOrEqual(5); 
+  expect(outOfStock.length).toBeGreaterThanOrEqual(45);
 });

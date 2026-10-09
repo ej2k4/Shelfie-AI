@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/lib/auth-context";
 import { useCart } from "@/lib/cart";
 import { useGeolocation } from "@/lib/hooks/useGeolocation";
 import type { SearchOffer } from "@/lib/types";
@@ -229,23 +229,16 @@ export default function LandingPage() {
           <div className="relative hidden md:block" style={{ flexShrink: 0 }} onClick={(e) => e.stopPropagation()}>
             <button
               onClick={() => setShowLocationModal(!showLocationModal)}
-              className="flex items-center gap-1.5 rounded-lg transition-all"
-              style={{
-                background: "var(--bg-surface-3)",
-                border: "1px solid var(--border-sm)",
-                padding: "6px 10px",
-                fontSize: "12px",
-                color: "var(--text-secondary)",
-                maxWidth: "190px",
-              }}
+              className="flex items-center gap-2 rounded-[var(--radius-lg)] transition-all bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-2)] border border-[var(--border-md)] px-3 py-2 text-xs font-semibold max-w-[200px] shadow-[var(--shadow-xs)]"
+              style={{ color: "var(--text-secondary)" }}
             >
-              <svg className="shrink-0" style={{ width: "12px", height: "12px", color: "var(--brand-500)" }} fill="currentColor" viewBox="0 0 20 20">
+              <svg className="shrink-0" style={{ width: "14px", height: "14px", color: "var(--brand-500)" }} fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
               </svg>
-              <span className="truncate max-w-[130px] font-semibold" style={{ color: "var(--text-primary)", fontSize: "12px" }}>
+              <span className="truncate text-left flex-1" style={{ color: "var(--text-primary)" }}>
                 {locating ? "Detecting…" : selectedLocation.split(",")[0]}
               </span>
-              <svg className="shrink-0" style={{ width: "10px", height: "10px", color: "var(--text-muted)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className={`shrink-0 transition-transform ${showLocationModal ? "rotate-180" : ""}`} style={{ width: "12px", height: "12px", color: "var(--text-muted)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
               </svg>
             </button>
@@ -278,15 +271,9 @@ export default function LandingPage() {
 
           {/* Search bar — grows to fill */}
           <div ref={searchBoxRef} className="flex-1 relative" style={{ minWidth: 0 }}>
-            <form onSubmit={handleSearchSubmit}>
+            <form onSubmit={handleSearchSubmit} className="relative w-full">
               <div
-                className="flex items-center transition-all duration-200"
-                style={{
-                  background: isSearchFocused ? "#fff" : "var(--bg-surface-3)",
-                  border: isSearchFocused ? "1.5px solid var(--brand-400)" : "1px solid var(--border-sm)",
-                  borderRadius: "var(--radius-pill)",
-                  boxShadow: isSearchFocused ? "var(--shadow-brand)" : "none",
-                }}
+                className={`flex items-center transition-all duration-200 rounded-[var(--radius-pill)] border ${isSearchFocused ? "bg-white border-[var(--brand-400)] shadow-[var(--shadow-brand)]" : "bg-[var(--bg-surface-3)] border-[var(--border-sm)] hover:bg-[var(--bg-overlay-md)]"}`}
               >
                 <div className="pl-4 pr-2 flex items-center">
                   <svg style={{ width: "15px", height: "15px", color: isSearchFocused ? "var(--brand-500)" : "var(--text-muted)", transition: "color 0.15s", flexShrink: 0 }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -374,11 +361,9 @@ export default function LandingPage() {
 
             {/* Become a Seller — desktop only */}
             <Link
-              href="/shop/dashboard"
-              className="hidden lg:inline-flex items-center text-xs font-semibold transition-all"
-              style={{ color: "var(--text-muted)", textDecoration: "none", whiteSpace: "nowrap", padding: "0 2px" }}
-              onMouseEnter={(e) => (e.currentTarget.style.color = "var(--text-primary)")}
-              onMouseLeave={(e) => (e.currentTarget.style.color = "var(--text-muted)")}
+              href="/shop/onboard"
+              className="hidden lg:inline-flex items-center text-xs font-bold transition-colors hover:text-[var(--brand-500)]"
+              style={{ color: "var(--text-secondary)", textDecoration: "none", whiteSpace: "nowrap", padding: "0 4px" }}
             >
               Become a Seller
             </Link>
@@ -392,13 +377,10 @@ export default function LandingPage() {
                 <div className="relative">
                   <button
                     onClick={() => setShowUserDropdown(!showUserDropdown)}
-                    className="flex items-center gap-1.5 rounded-lg transition-all"
+                    className="flex items-center gap-2 rounded-[var(--radius-lg)] transition-all px-3 py-2 text-xs font-semibold shadow-[var(--shadow-xs)] border"
                     style={{
-                      padding: "6px 10px",
-                      border: "1px solid var(--border-sm)",
-                      background: showUserDropdown ? "var(--bg-surface-3)" : "transparent",
-                      fontSize: "12.5px",
-                      fontWeight: 600,
+                      borderColor: showUserDropdown ? "var(--brand-300)" : "var(--border-md)",
+                      background: showUserDropdown ? "var(--brand-100)" : "var(--bg-surface)",
                       color: "var(--text-primary)",
                     }}
                   >
@@ -409,7 +391,7 @@ export default function LandingPage() {
                       {user.phone ? user.phone.slice(-2) : "U"}
                     </span>
                     <span className="hidden md:inline">Account</span>
-                    <svg style={{ width: "10px", height: "10px", color: "var(--text-muted)" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className={`shrink-0 transition-transform ${showUserDropdown ? "rotate-180 text-[var(--brand-500)]" : "text-[var(--text-muted)]"}`} style={{ width: "12px", height: "12px" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
@@ -614,51 +596,61 @@ export default function LandingPage() {
             </div>
           </div>
 
-          {/* Bottom bar: Powered by + dots */}
+          {/* Bottom bar: Powered by + dots + nav arrows */}
           <div
             className="absolute bottom-0 left-0 right-0 z-10 flex items-center justify-between px-6 sm:px-10 lg:px-12 py-3"
-            style={{ background: "rgba(0,0,0,0.25)", backdropFilter: "blur(8px)", borderTop: "1px solid rgba(255,255,255,0.06)" }}
+            style={{ background: "rgba(0,0,0,0.3)", backdropFilter: "blur(12px)", borderTop: "1px solid rgba(255,255,255,0.08)" }}
           >
-            <span className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.45)" }}>
+            <span className="text-xs font-medium" style={{ color: "rgba(255,255,255,0.55)" }}>
               {currentSlide === 0 ? "⚡ Powered by Instant Shelf Reserve" :
                currentSlide === 1 ? "🩺 100% Genuine Pharmacy Inventory" :
                "🛒 In-Store Available Right Now"}
             </span>
-            <div className="flex items-center gap-2">
-              {PROMO_SLIDES.map((_, idx) => (
+            <div className="flex items-center gap-3">
+              {/* Dots */}
+              <div className="flex items-center gap-1.5">
+                {PROMO_SLIDES.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => changeSlide(idx)}
+                    className="rounded-full transition-all duration-300"
+                    style={{
+                      height: "4px",
+                      width: currentSlide === idx ? "24px" : "6px",
+                      background: currentSlide === idx ? `rgb(${PROMO_SLIDES[idx].accentRgb})` : "rgba(255,255,255,0.25)",
+                    }}
+                    aria-label={`Slide ${idx + 1}`}
+                  />
+                ))}
+              </div>
+
+              {/* Prev / Next controls */}
+              <div className="flex items-center gap-1 ml-2">
                 <button
-                  key={idx}
-                  onClick={() => changeSlide(idx)}
-                  className="rounded-full transition-all duration-300"
-                  style={{
-                    height: "4px",
-                    width: currentSlide === idx ? "24px" : "6px",
-                    background: currentSlide === idx ? `rgb(${PROMO_SLIDES[idx].accentRgb})` : "rgba(255,255,255,0.25)",
-                  }}
-                />
-              ))}
+                  onClick={() => changeSlide((currentSlide - 1 + PROMO_SLIDES.length) % PROMO_SLIDES.length)}
+                  className="w-7 h-7 rounded-full flex items-center justify-center transition-all hover:bg-white/20 active:scale-95 text-white/80 hover:text-white"
+                  style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)" }}
+                  title="Previous slide"
+                  aria-label="Previous slide"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
+                  </svg>
+                </button>
+                <button
+                  onClick={() => changeSlide((currentSlide + 1) % PROMO_SLIDES.length)}
+                  className="w-7 h-7 rounded-full flex items-center justify-center transition-all hover:bg-white/20 active:scale-95 text-white/80 hover:text-white"
+                  style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)" }}
+                  title="Next slide"
+                  aria-label="Next slide"
+                >
+                  <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
-
-          {/* Carousel nav arrows */}
-          <button
-            onClick={() => changeSlide((currentSlide - 1 + PROMO_SLIDES.length) % PROMO_SLIDES.length)}
-            className="absolute left-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
-            style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", backdropFilter: "blur(8px)", color: "#fff", zIndex: 20 }}
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M15 19l-7-7 7-7" />
-            </svg>
-          </button>
-          <button
-            onClick={() => changeSlide((currentSlide + 1) % PROMO_SLIDES.length)}
-            className="absolute right-4 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
-            style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.15)", backdropFilter: "blur(8px)", color: "#fff", zIndex: 20 }}
-          >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 5l7 7-7 7" />
-            </svg>
-          </button>
         </div>
 
         {/* ── SHELF 1: TOP TECH DEALS ────────────────────────────── */}
@@ -687,6 +679,7 @@ export default function LandingPage() {
           viewAllHref="/search?q=pharmacy"
           viewAllLabel="View All Pharmacy"
           accentColor="var(--green)"
+          cols={pharmacyOffers.length > 0 && pharmacyOffers.length <= 4 ? 4 : undefined}
         >
           {nearbyLoading
             ? Array.from({ length: 6 }).map((_, i) => <SkeletonProductCard key={i} />)
@@ -857,6 +850,7 @@ function ShelfSection({
   viewAllHref,
   viewAllLabel,
   accentColor,
+  cols,
   children,
 }: {
   icon: string;
@@ -866,8 +860,13 @@ function ShelfSection({
   viewAllHref: string;
   viewAllLabel: string;
   accentColor: string;
+  cols?: number;
   children: React.ReactNode;
 }) {
+  const gridClass = cols === 4
+    ? "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-3 sm:gap-4"
+    : "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4";
+
   return (
     <section style={{ background: "var(--bg-surface)", border: "1px solid var(--border-sm)", borderRadius: "var(--radius-xl)", padding: "24px", boxShadow: "var(--shadow-sm)" }}>
       {/* Header */}
@@ -900,7 +899,7 @@ function ShelfSection({
       </div>
 
       {/* Product grid */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3 sm:gap-4">
+      <div className={gridClass}>
         {children}
       </div>
     </section>
@@ -983,39 +982,40 @@ function PremiumProductCard({ offer }: { offer: SearchOffer }) {
       </div>
 
       {/* Content */}
-      <div className="p-3 flex flex-col flex-1 gap-2.5">
+      <div className="p-3.5 flex flex-col flex-1 gap-3">
         <div>
           <h4
-            className="text-xs font-bold leading-tight line-clamp-2 transition-colors duration-150"
-            style={{ color: hovered ? "var(--brand-300)" : "var(--text-primary)", letterSpacing: "-0.01em" }}
+            className="text-[13px] font-bold leading-snug line-clamp-2 transition-colors duration-150"
+            style={{ color: hovered ? "var(--brand-500)" : "var(--text-primary)", letterSpacing: "-0.01em" }}
           >
             {offer.productName}
           </h4>
-          <div className="flex items-center justify-between mt-1.5" style={{ fontSize: "11px" }}>
+          <div className="flex items-center justify-between mt-2" style={{ fontSize: "11px" }}>
             <span className="truncate max-w-[100px] font-medium" style={{ color: "var(--text-muted)" }}>
               {offer.shopName}
             </span>
-            <span className="font-semibold shrink-0 flex items-center gap-1" style={{ color: "var(--brand-400)" }}>
+            <span className="font-semibold shrink-0 flex items-center gap-1 bg-[var(--bg-surface-3)] px-1.5 py-0.5 rounded-md" style={{ color: "var(--text-secondary)" }}>
               🚶 {offer.walkMinutes}m
             </span>
           </div>
         </div>
 
         {/* Pricing */}
-        <div className="pt-2.5" style={{ borderTop: "1px solid var(--border-xs)" }}>
-          <div className="flex items-baseline gap-1.5 flex-wrap">
-            <span className="text-sm font-black" style={{ color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
+        <div className="pt-3 mt-auto" style={{ borderTop: "1px solid var(--border-xs)" }}>
+          <div className="flex items-baseline gap-2 flex-wrap mb-1.5">
+            <span className="text-base font-black font-display" style={{ color: "var(--text-primary)", letterSpacing: "-0.02em" }}>
               ₹{offer.price.toLocaleString("en-IN")}
             </span>
-            <span className="text-[10px] line-through" style={{ color: "var(--text-muted)" }}>
+            <span className="text-xs font-medium line-through" style={{ color: "var(--text-muted)" }}>
               ₹{mrp.toLocaleString("en-IN")}
             </span>
-            <span className="text-[10px] font-bold" style={{ color: "var(--green)" }}>
-              {discountPercent}% off
+            <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: "var(--green-bg)", color: "var(--green)" }}>
+              {discountPercent}% OFF
             </span>
           </div>
-          <div className="text-[10px] font-medium mt-1 flex items-center gap-1" style={{ color: "var(--text-muted)" }}>
-            <span style={{ color: "var(--brand-400)" }}>⚡</span> Free Local Pickup
+          <div className="text-[10.5px] font-semibold flex items-center gap-1.5" style={{ color: "var(--text-secondary)" }}>
+            <span className="flex items-center justify-center w-4 h-4 rounded-full bg-[var(--brand-100)] text-[var(--brand-500)] text-[10px]">⚡</span> 
+            Free Local Pickup
           </div>
 
           {/* Add to cart button */}
@@ -1034,7 +1034,7 @@ function PremiumProductCard({ offer }: { offer: SearchOffer }) {
             className="w-full mt-2.5 py-2.5 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5"
             style={
               inCart
-                ? { background: "var(--brand-100)", color: "var(--brand-300)", border: "1px solid var(--brand-border)" }
+                ? { background: "var(--brand-100)", color: "var(--brand-600)", border: "1px solid var(--brand-border)" }
                 : { background: "var(--brand-500)", color: "#fff", boxShadow: "0 2px 12px var(--brand-glow)" }
             }
           >
@@ -1069,30 +1069,26 @@ function PremiumCartButton() {
   return (
     <Link
       href="/cart"
-      className="flex items-center gap-2 text-sm font-semibold py-2 px-3 rounded-xl transition-all"
+      className="flex items-center gap-2 text-sm font-semibold py-2 px-3.5 rounded-[var(--radius-lg)] transition-all bg-[var(--bg-surface)] hover:bg-[var(--bg-surface-2)] border border-[var(--border-md)] shadow-[var(--shadow-xs)]"
       style={{
-        color: "var(--text-secondary)",
-        border: "1px solid var(--border-sm)",
-        background: "var(--bg-overlay-md)",
+        color: "var(--text-primary)",
         textDecoration: "none",
       }}
-      onMouseEnter={(e) => { e.currentTarget.style.color = "var(--text-primary)"; e.currentTarget.style.borderColor = "var(--border-md)"; }}
-      onMouseLeave={(e) => { e.currentTarget.style.color = "var(--text-secondary)"; e.currentTarget.style.borderColor = "var(--border-sm)"; }}
     >
       <div className="relative">
         <svg className="w-4.5 h-4.5" style={{ width: "18px", height: "18px" }} fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.2} d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
         </svg>
         {qty > 0 && (
           <span
-            className="absolute -top-1.5 -right-1.5 text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center"
-            style={{ background: "var(--brand-500)", color: "#fff", boxShadow: "0 0 0 2px var(--bg-canvas)" }}
+            className="absolute -top-1.5 -right-1.5 text-[9px] font-black w-4 h-4 rounded-full flex items-center justify-center shadow-sm"
+            style={{ background: "var(--brand-500)", color: "#fff", boxShadow: "0 0 0 2px var(--bg-surface)" }}
           >
             {qty}
           </span>
         )}
       </div>
-      <span className="hidden sm:inline text-xs">Bag</span>
+      <span className="hidden sm:inline text-xs font-bold">Bag</span>
     </Link>
   );
 }

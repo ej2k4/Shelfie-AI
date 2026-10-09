@@ -121,7 +121,7 @@ addShop({ id: "shop_km_01", name: "Sri Ganesh Electronics", area: "Koramangala",
   phone: "+919845000001", reliability: 0.94, hours: weekdayHours,
   stats: { requestsReceived: 24, requestsAccepted: 19, avgResponseSec: 38, pickupsConfirmed: 42, pickupsFulfilled: 40 }
 });
-addProduct({ shopId: "shop_km_01", category: "electronics", name: "Dell 65W Laptop Charger", price: 1299, onlineQty: 4, offlineQty: 8, emoji: "🔌" });
+addProduct({ shopId: "shop_km_01", category: "electronics", name: "Dell 65W Laptop Charger", price: 1299, onlineQty: 5, offlineQty: 8, emoji: "🔌", productId: "02" });
 addProduct({ shopId: "shop_km_01", category: "electronics", name: "USB-C to USB-A Cable (1m)", price: 299, onlineQty: 10, offlineQty: 15, emoji: "🔌" });
 addProduct({ shopId: "shop_km_01", category: "electronics", name: "Wireless Mouse (Logitech M185)", price: 849, onlineQty: 3, offlineQty: 5, emoji: "🖱️" });
 addProduct({ shopId: "shop_km_01", category: "electronics", name: "HDMI Cable (2m)", price: 349, onlineQty: 6, offlineQty: 4, emoji: "📺" });
