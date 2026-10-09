@@ -11,13 +11,14 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (!res) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
     // Get product and shop name
-    const inv = db.prepare(`SELECT name, price FROM inventory WHERE id = ?`).get(res.inventoryId) as any;
+    const inv = db.prepare(`SELECT name, price, imageEmoji FROM inventory WHERE id = ?`).get(res.inventoryId) as any;
     const shop = db.prepare(`SELECT name, address, lat, lng, phone FROM shops WHERE shopId = ?`).get(res.shopId) as any;
 
     return NextResponse.json({
       ...res,
       productName: inv?.name,
       productPrice: inv?.price,
+      productEmoji: inv?.imageEmoji,
       shopName: shop?.name,
       shopAddress: shop?.address,
       shopLat: shop?.lat,

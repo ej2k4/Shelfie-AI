@@ -45,8 +45,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({
         success: true,
         reservationId: reservation.id,
+        code,
         customerPhone: reservation.customerPhone,
+        productName: reservation.productName,
+        price: reservation.productPrice,
         qty: reservation.qty,
+        total: (reservation.productPrice || 0) * (reservation.qty || 1),
         source: reservation.source,
       });
     } catch (err: any) {
