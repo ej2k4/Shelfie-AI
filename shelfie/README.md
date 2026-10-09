@@ -1,4 +1,8 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Shelfie — Live Local Inventory & Pickup Network
+
+## Project Status (v3)
+- **UI:** ✅ Complete (Design system tokens, spatial layout architecture, CSS cascade layering, and premium light theme across storefront, merchant POS terminal, and customer pickup pass).
+- **In Progress:** ⏳ UX flows and end-to-end user mapping pages remaining.
 
 ## Getting Started
 
