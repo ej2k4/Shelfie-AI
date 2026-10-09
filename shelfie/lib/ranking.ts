@@ -1,12 +1,17 @@
 // lib/ranking.ts
 import { SearchOffer, Campaign } from "./types";
 
+export interface SponsoredResult {
+  offers: SearchOffer[];
+  sponsoredCampaignId: string | null;
+}
+
 /**
  * Mutates the results array to insert a sponsored result in the top slots.
- * Also marks the offer as `sponsored = true`.
+ * Also marks the offer as `sponsored = true` and returns the matched campaignId.
  */
-export function applySponsoredSlot(offers: SearchOffer[], activeCampaigns: Campaign[]): SearchOffer[] {
-  if (offers.length === 0 || activeCampaigns.length === 0) return offers;
+export function applySponsoredSlot(offers: SearchOffer[], activeCampaigns: Campaign[]): SponsoredResult {
+  if (offers.length === 0 || activeCampaigns.length === 0) return { offers, sponsoredCampaignId: null };
 
   // For the prototype, we simply pick the first offer that matches a campaign's keywords.
   // In a real app, this would be an auction (highest CPC wins) and geo-targeted.
@@ -32,9 +37,9 @@ export function applySponsoredSlot(offers: SearchOffer[], activeCampaigns: Campa
       offers.unshift(sponsoredOffer);
 
       // Only one sponsored slot per search for now
-      break; 
+      return { offers, sponsoredCampaignId: campaign.id };
     }
   }
 
-  return offers;
+  return { offers, sponsoredCampaignId: null };
 }

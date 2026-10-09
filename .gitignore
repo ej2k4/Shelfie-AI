@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+shelfie/node_modules/
+
+# Next.js & Build outputs
+.next/
+shelfie/.next/
+out/
+build/
+
+# Environment files
+.env
+.env*.local
+shelfie/.env
+shelfie/.env*.local
+
+# Database files
+*.db
+*.db-journal
+*.db-shm
+*.db-wal
+*.sqlite
+shelfie/data/*.db
+shelfie/data/*.db-*
+
+# OS & Logs
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*

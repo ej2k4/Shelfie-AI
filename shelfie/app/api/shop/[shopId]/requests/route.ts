@@ -1,10 +1,12 @@
 // app/api/shop/[shopId]/requests/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { requireShopOwner } from "@/lib/auth";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ shopId: string }> }) {
   try {
     const { shopId } = await params;
+    await requireShopOwner(shopId);
     const db = getDb();
 
     const requests = db.prepare(`
@@ -17,7 +19,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ shop
     `).all(shopId);
 
     return NextResponse.json({ requests });
-  } catch (err) {
+  } catch (err: any) {
+    if (err.message?.startsWith("Unauthorized") || err.message?.startsWith("Forbidden")) {
+      return NextResponse.json({ error: err.message }, { status: err.message.startsWith("Unauthorized") ? 401 : 403 });
+    }
     console.error("[shop/requests]", err);
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }

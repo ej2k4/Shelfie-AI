@@ -5,13 +5,20 @@ import { getDb } from "@/lib/db";
 import { assertCanAddProducts, effectivePlan, PlanLimitError } from "@/lib/entitlements";
 import { randomUUID } from "crypto";
 
+import { requireShopOwner } from "@/lib/auth";
+
 export async function GET(req: NextRequest, { params }: { params: Promise<{ shopId: string }> }) {
   try {
     const { shopId } = await params;
+    await requireShopOwner(shopId);
+    
     const db = getDb();
     const items = db.prepare(`SELECT * FROM inventory WHERE shopId = ? ORDER BY category, name`).all(shopId);
     return NextResponse.json({ inventory: items });
-  } catch (err) {
+  } catch (err: any) {
+    if (err.message?.startsWith("Unauthorized") || err.message?.startsWith("Forbidden")) {
+      return NextResponse.json({ error: err.message }, { status: err.message.startsWith("Unauthorized") ? 401 : 403 });
+    }
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
 }
@@ -28,6 +35,8 @@ const addSchema = z.object({
 export async function POST(req: NextRequest, { params }: { params: Promise<{ shopId: string }> }) {
   try {
     const { shopId } = await params;
+    await requireShopOwner(shopId);
+    
     const body = await req.json();
     const data = addSchema.parse(body);
 
@@ -51,6 +60,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sho
 
     return NextResponse.json({ id, productId, ...data });
   } catch (err: any) {
+    if (err.message?.startsWith("Unauthorized") || err.message?.startsWith("Forbidden")) {
+      return NextResponse.json({ error: err.message }, { status: err.message.startsWith("Unauthorized") ? 401 : 403 });
+    }
     if (err instanceof PlanLimitError) {
       return NextResponse.json({
         error: "PLAN_LIMIT",
@@ -69,12 +81,18 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ sho
 export async function DELETE(req: NextRequest, { params }: { params: Promise<{ shopId: string }> }) {
   try {
     const { shopId } = await params;
+    await requireShopOwner(shopId);
+    
     const inventoryId = req.nextUrl.searchParams.get("id");
     if (!inventoryId) return NextResponse.json({ error: "id required" }, { status: 400 });
     const db = getDb();
     db.prepare("DELETE FROM inventory WHERE id = ? AND shopId = ?").run(inventoryId, shopId);
     return NextResponse.json({ success: true });
-  } catch (err) {
+  } catch (err: any) {
+    if (err.message?.startsWith("Unauthorized") || err.message?.startsWith("Forbidden")) {
+      return NextResponse.json({ error: err.message }, { status: err.message.startsWith("Unauthorized") ? 401 : 403 });
+    }
     return NextResponse.json({ error: "Failed" }, { status: 500 });
   }
 }
+

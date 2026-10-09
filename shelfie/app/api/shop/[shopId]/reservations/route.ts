@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
+import { requireShopOwner } from "@/lib/auth";
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ shopId: string }> }) {
   try {
     const shopId = (await params).shopId;
+    await requireShopOwner(shopId);
     const db = getDb();
     
     const reservations = db.prepare(`
@@ -24,7 +26,10 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ shop
     const totalRevenue = completed.reduce((sum: number, r: any) => sum + (r.productPrice * r.qty), 0);
 
     return NextResponse.json({ active, history, completedCount: completed.length, totalRevenue });
-  } catch (err) {
+  } catch (err: any) {
+    if (err.message?.startsWith("Unauthorized") || err.message?.startsWith("Forbidden")) {
+      return NextResponse.json({ error: err.message }, { status: err.message.startsWith("Unauthorized") ? 401 : 403 });
+    }
     console.error("[shop-reservations]", err);
     return NextResponse.json({ error: "Failed to load reservations" }, { status: 500 });
   }

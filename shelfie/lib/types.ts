@@ -114,6 +114,7 @@ export interface SearchOffer {
   reliability: number;
   plan: "FREE" | "PRO" | "ASSOCIATION";
   sponsored?: boolean;
+  imageEmoji?: string;  // populated from InventoryItem for display purposes
 }
 
 export interface ImpactStats {

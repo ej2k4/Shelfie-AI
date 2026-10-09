@@ -269,8 +269,13 @@ export function verifyPickupCode(shopId: string, code: string) {
 
   const doVerify = db.transaction(() => {
     const res = db
-      .prepare(`SELECT * FROM reservations WHERE shopId = ? AND pickupCode = ? AND status = 'HELD'`)
-      .get(shopId, code) as Reservation | undefined;
+      .prepare(`
+        SELECT r.*, i.name as productName, i.price as productPrice, i.imageEmoji
+        FROM reservations r
+        JOIN inventory i ON r.inventoryId = i.id
+        WHERE r.shopId = ? AND r.pickupCode = ? AND r.status = 'HELD'
+      `)
+      .get(shopId, code) as any;
 
     if (!res) throw new Error("INVALID_CODE");
     if (new Date(res.expiresAt) < new Date()) throw new Error("CODE_EXPIRED");

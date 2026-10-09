@@ -66,71 +66,85 @@ export function searchOffers(args: SearchArgs): SearchOffer[] {
   const { q, lat, lng, radiusKm = 3, sort = "distance", category } = args;
   const db = getDb();
   const radiusM = radiusKm * 1000;
-
-  // Load all shops and inventory, then filter in JS
-  // (At Azure AI Search scale this query is done server-side with geo.distance filter)
-  const shops = db.prepare(`SELECT * FROM shops`).all() as any[];
   const queryLower = q.toLowerCase().trim();
+
+  // Single JOIN query — eliminates N+1 per-shop inventory queries
+  let sql = `
+    SELECT
+      i.id        AS inventoryId,
+      i.name      AS productName,
+      i.category,
+      i.price,
+      i.onlineQty,
+      i.offlineQty,
+      i.lastUpdated,
+      i.imageEmoji,
+      s.shopId,
+      s.name      AS shopName,
+      s.address   AS shopAddress,
+      s.lat,
+      s.lng,
+      s.hours,
+      s.plan,
+      s.reliability
+    FROM inventory i
+    JOIN shops s ON i.shopId = s.shopId
+    WHERE 1=1
+  `;
+  const params: any[] = [];
+
+  if (category) {
+    sql += ` AND i.category = ?`;
+    params.push(category);
+  }
+
+  if (queryLower) {
+    sql += ` AND (LOWER(i.name) LIKE ? OR LOWER(i.category) LIKE ?)`;
+    params.push(`%${queryLower}%`, `%${queryLower}%`);
+  }
+
+  const rows = db.prepare(sql).all(...params) as any[];
 
   const results: SearchOffer[] = [];
 
-  for (const shop of shops) {
-    const shopLat = shop.lat as number;
-    const shopLng = shop.lng as number;
-    const distM = haversineMetres(lat, lng, shopLat, shopLng);
+  for (const row of rows) {
+    const distM = haversineMetres(lat, lng, row.lat, row.lng);
     if (distM > radiusM) continue;
 
-    const hours = JSON.parse(shop.hours);
+    const inStock = row.onlineQty > 0;
+    const requestable = !inStock && row.offlineQty > 0;
+    if (!inStock && !requestable) continue;
+
+    const hours = JSON.parse(row.hours);
     const { open: openNow, closesAt } = isOpenNow(hours);
-    const plan = JSON.parse(shop.plan) as { id: string };
+    const plan = JSON.parse(row.plan) as { id: string };
 
-    // Query inventory for this shop
-    let inventoryQuery = `SELECT * FROM inventory WHERE shopId = ?`;
-    const params: any[] = [shop.shopId];
+    const freshnessMins = Math.floor(
+      (Date.now() - new Date(row.lastUpdated).getTime()) / 60000
+    );
 
-    if (category) {
-      inventoryQuery += ` AND category = ?`;
-      params.push(category);
-    }
-
-    const items = db.prepare(inventoryQuery).all(...params) as InventoryItem[];
-
-    for (const item of items) {
-      if (queryLower && !item.name.toLowerCase().includes(queryLower) && !item.category.toLowerCase().includes(queryLower)) {
-        continue;
-      }
-
-      const inStock = item.onlineQty > 0;
-      const requestable = !inStock && item.offlineQty > 0;
-
-      if (!inStock && !requestable) continue;
-
-      const freshnessMins = Math.floor(
-        (Date.now() - new Date(item.lastUpdated).getTime()) / 60000
-      );
-
-      results.push({
-        inventoryId: item.id,
-        shopId: shop.shopId,
-        shopName: shop.name,
-        shopAddress: shop.address,
-        productName: item.name,
-        category: item.category,
-        price: item.price,
-        onlineQty: item.onlineQty,
-        inStock,
-        requestable,
-        location: { lat: shopLat, lng: shopLng },
-        distanceM: Math.round(distM),
-        walkMinutes: walkMinutes(distM),
-        openNow,
-        closesAt,
-        lastUpdated: item.lastUpdated,
-        freshnessMins,
-        reliability: shop.reliability,
-        plan: plan.id as "FREE" | "PRO" | "ASSOCIATION",
-      });
-    }
+    results.push({
+      inventoryId: row.inventoryId,
+      shopId: row.shopId,
+      shopName: row.shopName,
+      shopAddress: row.shopAddress,
+      productName: row.productName,
+      category: row.category,
+      price: row.price,
+      onlineQty: row.onlineQty,
+      inStock,
+      requestable,
+      location: { lat: row.lat, lng: row.lng },
+      distanceM: Math.round(distM),
+      walkMinutes: walkMinutes(distM),
+      openNow,
+      closesAt,
+      lastUpdated: row.lastUpdated,
+      freshnessMins,
+      reliability: row.reliability,
+      plan: plan.id as "FREE" | "PRO" | "ASSOCIATION",
+      imageEmoji: row.imageEmoji || "📦",
+    });
   }
 
   // Sort results
@@ -142,9 +156,30 @@ export function searchOffers(args: SearchArgs): SearchOffer[] {
       return a.openNow ? -1 : 1;
     });
   } else {
-    // Default: distance
     results.sort((a, b) => a.distanceM - b.distanceM);
   }
 
   return results.slice(0, 20);
 }
+
+// ─── CPC Campaign Click Deduction ─────────────────────────────────────────────
+// Call this when a sponsored item is clicked/reserved.
+// Atomic: decrements remainingINR and pauses campaign if budget is exhausted.
+export function deductCampaignClick(campaignId: string): void {
+  const db = getDb();
+  db.transaction(() => {
+    const campaign = db.prepare(
+      `SELECT costPerClickINR, remainingINR FROM campaigns WHERE id = ? AND status = 'ACTIVE'`
+    ).get(campaignId) as { costPerClickINR: number; remainingINR: number } | undefined;
+
+    if (!campaign) return; // campaign gone or paused — no-op
+
+    const newRemaining = Math.max(0, campaign.remainingINR - campaign.costPerClickINR);
+    const newStatus = newRemaining <= 0 ? "PAUSED" : "ACTIVE";
+
+    db.prepare(
+      `UPDATE campaigns SET remainingINR = ?, status = ? WHERE id = ?`
+    ).run(newRemaining, newStatus, campaignId);
+  })();
+}
+

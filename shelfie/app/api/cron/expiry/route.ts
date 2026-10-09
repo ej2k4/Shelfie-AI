@@ -1,11 +1,18 @@
 // app/api/cron/expiry/route.ts
 // Safety-net sweeper: expires HELD reservations past their expiresAt.
 // In production, call this via a scheduled job every 2 minutes.
-// The setTimeout in scheduleExpiry is the primary expiry mechanism.
+// Protected by CRON_SECRET bearer token.
 import { NextRequest, NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
 
 export async function POST(req: NextRequest) {
+  // Verify bearer token — prevents public execution of this endpoint
+  const authHeader = req.headers.get("authorization");
+  const secret = process.env.CRON_SECRET;
+  if (secret && authHeader !== `Bearer ${secret}`) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
   try {
     const db = getDb();
     const now = new Date().toISOString();

@@ -5,6 +5,8 @@ import { acceptRequest, declineRequest } from "@/lib/inventory";
 import { notifyCustomerOfAccept } from "@/lib/notify";
 import { getDb } from "@/lib/db";
 
+import { requireShopOwner } from "@/lib/auth";
+
 const schema = z.object({
   decision: z.enum(["ACCEPT", "DECLINE"]),
   shopId: z.string().min(1),
@@ -15,6 +17,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     const { id: requestId } = await params;
     const body = await req.json();
     const { decision, shopId } = schema.parse(body);
+
+    await requireShopOwner(shopId);
 
     const db = getDb();
 
@@ -70,6 +74,9 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     if (err.name === "ZodError") {
       return NextResponse.json({ error: "Invalid input", details: err.errors }, { status: 400 });
     }
+    if (err.message?.startsWith("Unauthorized") || err.message?.startsWith("Forbidden")) {
+      return NextResponse.json({ error: err.message }, { status: err.message.startsWith("Unauthorized") ? 401 : 403 });
+    }
     const code =
       err.message === "REQUEST_NOT_FOUND" ? 404
       : err.message === "REQUEST_EXPIRED" ? 410
@@ -78,3 +85,4 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     return NextResponse.json({ error: err.message }, { status: code });
   }
 }
+
