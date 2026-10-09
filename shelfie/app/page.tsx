@@ -820,6 +820,7 @@ export default function LandingPage() {
           <div className="flex items-center gap-6 font-semibold">
             {[
               { href: "/search?q=", label: "Map Search" },
+              { href: "/shop/onboard", label: "Become a Seller" },
               { href: "/shop/dashboard", label: "Shopkeeper Dashboard" },
               { href: "/cart", label: "My Bag" },
             ].map(({ href, label }) => (
