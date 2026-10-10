@@ -107,6 +107,7 @@ export default function LandingPage() {
 
   const searchBoxRef = useRef<HTMLDivElement>(null);
   const categoryBarRef = useRef<HTMLDivElement>(null);
+  const userMenuRef = useRef<HTMLDivElement>(null);
 
   // Auto-advance banner carousel
   useEffect(() => {
@@ -120,14 +121,16 @@ export default function LandingPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Close dropdowns on outside click
+  // Close dropdowns on outside click (only if clicked outside the dropdown ref)
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (searchBoxRef.current && !searchBoxRef.current.contains(e.target as Node)) {
+      const target = e.target as Node;
+      if (searchBoxRef.current && !searchBoxRef.current.contains(target)) {
         setIsSearchFocused(false);
       }
-      setShowLocationModal(false);
-      setShowUserDropdown(false);
+      if (userMenuRef.current && !userMenuRef.current.contains(target)) {
+        setShowUserDropdown(false);
+      }
     };
     document.addEventListener("mousedown", handler);
     return () => document.removeEventListener("mousedown", handler);
@@ -400,7 +403,7 @@ export default function LandingPage() {
             <div className="hidden lg:block" style={{ width: "1px", height: "18px", background: "var(--border-sm)" }} />
 
             {/* Account */}
-            <div className="relative" onClick={(e) => e.stopPropagation()}>
+            <div ref={userMenuRef} className="relative">
               {isHydrated && user ? (
                 <div className="relative">
                   <button
@@ -453,8 +456,12 @@ export default function LandingPage() {
                         )}
                       </Link>
                       <button
-                        onClick={() => { logout(); setShowUserDropdown(false); }}
-                        className="w-full text-left flex items-center gap-2 px-3 py-2.5 text-sm font-semibold rounded-lg transition-all mt-1"
+                        type="button"
+                        onClick={() => {
+                          logout();
+                          setShowUserDropdown(false);
+                        }}
+                        className="w-full text-left flex items-center gap-2 px-3 py-2.5 text-sm font-semibold rounded-lg transition-all mt-1 cursor-pointer hover:opacity-90"
                         style={{ background: "var(--red-bg)", color: "var(--red)", border: "1px solid var(--red-border)" }}
                       >
                         Sign Out

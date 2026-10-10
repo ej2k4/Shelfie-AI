@@ -26,6 +26,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try { setUser(JSON.parse(saved)); } catch (e) {}
     }
     setIsHydrated(true);
+
+    const onStorageChange = () => {
+      const current = localStorage.getItem("shelfie_mock_auth");
+      if (current) {
+        try { setUser(JSON.parse(current)); } catch { setUser(null); }
+      } else {
+        setUser(null);
+      }
+    };
+    window.addEventListener("storage", onStorageChange);
+    return () => window.removeEventListener("storage", onStorageChange);
   }, []);
 
   const login = (u: AuthUser) => {
@@ -36,6 +47,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = () => {
     setUser(null);
     localStorage.removeItem("shelfie_mock_auth");
+    // Also clear cookie if set
+    if (typeof document !== "undefined") {
+      document.cookie = "shelfie_session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT;";
+    }
+    // Async call to server logout
+    fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
   };
 
   return (
