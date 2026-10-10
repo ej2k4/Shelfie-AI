@@ -133,11 +133,39 @@ export default function LandingPage() {
     return () => document.removeEventListener("mousedown", handler);
   }, []);
 
-  // Fetch reservations
+  // Fetch reservations (supports customer/shopkeeper account or guest localStorage)
+  const [persistedPhone, setPersistedPhone] = useState<string>("");
+  const [persistedIds, setPersistedIds] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const savedPhone = localStorage.getItem("shelfie_last_phone");
+      if (savedPhone) setPersistedPhone(savedPhone);
+      try {
+        const savedIds = JSON.parse(localStorage.getItem("shelfie_my_reservations") || "[]");
+        if (Array.isArray(savedIds)) setPersistedIds(savedIds);
+      } catch {}
+    }
+  }, []);
+
+  const activeCustomerPhone = user?.phone || persistedPhone;
+
   const { data: userRes } = useQuery({
-    queryKey: ["customer-reservations", user?.phone],
-    queryFn: async () => (await fetch(`/api/reservations?phone=${encodeURIComponent(user?.phone || "")}`)).json(),
-    enabled: !!user?.phone && user.role === "customer",
+    queryKey: ["customer-reservations", activeCustomerPhone, persistedIds.join(",")],
+    queryFn: async () => {
+      let url = "";
+      if (activeCustomerPhone) {
+        url = `/api/reservations?phone=${encodeURIComponent(activeCustomerPhone)}`;
+      } else if (persistedIds.length > 0) {
+        url = `/api/reservations?ids=${encodeURIComponent(persistedIds.join(","))}`;
+      } else {
+        return { reservations: [] };
+      }
+      const res = await fetch(url);
+      if (!res.ok) return { reservations: [] };
+      return res.json();
+    },
+    enabled: !!activeCustomerPhone || persistedIds.length > 0,
     refetchInterval: 5000,
   });
 
@@ -413,11 +441,16 @@ export default function LandingPage() {
                           🏪 Merchant Portal
                         </Link>
                       )}
-                      <Link href="/cart" className="flex items-center gap-2 px-3 py-2.5 text-sm font-semibold rounded-lg transition-all" style={{ color: "var(--text-secondary)", textDecoration: "none" }}
+                      <Link href="/cart?tab=reservations" className="flex items-center justify-between px-3 py-2.5 text-sm font-semibold rounded-lg transition-all" style={{ color: "var(--text-secondary)", textDecoration: "none" }}
                         onMouseEnter={(e) => { e.currentTarget.style.background = "var(--bg-surface-3)"; e.currentTarget.style.color = "var(--text-primary)"; }}
                         onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--text-secondary)"; }}
                       >
-                        🛍️ My Bag & Reservations
+                        <span className="flex items-center gap-2">🛍️ My Bag & Reservations</span>
+                        {activeHolds.length > 0 && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-[var(--green)] text-white">
+                            {activeHolds.length}
+                          </span>
+                        )}
                       </Link>
                       <button
                         onClick={() => { logout(); setShowUserDropdown(false); }}
@@ -777,31 +810,35 @@ export default function LandingPage() {
       {activeHolds.length > 0 && (
         <div className="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-40 animate-slideUp">
           <Link
-            href={`/reserve/${activeHolds[0].id}`}
+            href={activeHolds.length > 1 ? "/cart?tab=reservations" : `/reserve/${activeHolds[0].id}`}
             className="flex items-center justify-between p-4 rounded-2xl transition-all hover:-translate-y-1"
             style={{
-              background: "var(--bg-surface-2)",
-              border: "1px solid var(--amber-border)",
-              boxShadow: `var(--shadow-xl), 0 0 30px rgba(245,158,11,0.15)`,
+              background: "var(--bg-surface)",
+              border: "1px solid var(--brand-300)",
+              boxShadow: `var(--shadow-xl), 0 0 30px rgba(0,0,0,0.08)`,
               textDecoration: "none",
             }}
           >
             <div className="flex items-center gap-3">
               <span
-                className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
-                style={{ background: "var(--amber-bg)", border: "1px solid var(--amber-border)" }}
+                className="w-10 h-10 rounded-xl flex items-center justify-center text-lg shrink-0"
+                style={{ background: "var(--brand-100)", border: "1px solid var(--brand-200)" }}
               >
-                🛍️
+                🎟️
               </span>
-              <div>
-                <div className="text-xs font-bold uppercase" style={{ color: "var(--amber)", letterSpacing: "0.08em" }}>Active Shelf Hold</div>
-                <div className="text-sm font-semibold mt-0.5" style={{ color: "var(--text-primary)" }}>
-                  {activeHolds.length} item(s) reserved at {activeHolds[0].shopName}
+              <div className="min-w-0">
+                <div className="text-[11px] font-bold uppercase" style={{ color: "var(--brand-600)", letterSpacing: "0.08em" }}>
+                  Active Hold {activeHolds[0].pickupCode ? `· PIN #${activeHolds[0].pickupCode}` : ""}
+                </div>
+                <div className="text-sm font-semibold mt-0.5 truncate max-w-[220px]" style={{ color: "var(--text-primary)" }}>
+                  {activeHolds.length === 1 
+                    ? `${activeHolds[0].productName || 'Item'} at ${activeHolds[0].shopName}`
+                    : `${activeHolds.length} items reserved across stores`}
                 </div>
               </div>
             </div>
-            <span className="text-xs font-bold px-4 py-2 rounded-xl" style={{ background: "var(--amber)", color: "#000" }}>
-              Collect →
+            <span className="text-xs font-bold px-3.5 py-2 rounded-xl bg-[var(--brand-500)] text-white shadow-xs shrink-0">
+              View PIN →
             </span>
           </Link>
         </div>
