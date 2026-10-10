@@ -4,6 +4,7 @@ import { z } from "zod";
 import { inventoryRepo } from "@/lib/repositories/inventory";
 import { scheduleExpiry } from "@/lib/expiry";
 import { logEvent } from "@/lib/events";
+import { getDb } from "@/lib/db";
 
 const itemSchema = z.object({
   inventoryId: z.string().min(1),
@@ -31,17 +32,29 @@ export async function POST(req: NextRequest) {
       logEvent("RESERVE", { shopId: res.shopId, productKey: res.inventoryId });
     }
 
-    return NextResponse.json({
-      success: true,
-      reservations: created.map((r) => ({
+    const db = getDb();
+    const richReservations = created.map((r) => {
+      const inv = db.prepare(`SELECT name, price, imageEmoji FROM inventory WHERE id = ?`).get(r.inventoryId) as any;
+      const shop = db.prepare(`SELECT name, address, phone FROM shops WHERE shopId = ?`).get(r.shopId) as any;
+      return {
         reservationId: r.id,
         shopId: r.shopId,
+        shopName: shop?.name || "Local Store",
+        shopAddress: shop?.address || "",
         inventoryId: r.inventoryId,
+        productName: inv?.name || "Product",
+        productPrice: inv?.price || 0,
+        imageEmoji: inv?.imageEmoji || "📦",
         qty: r.qty,
         pickupCode: r.pickupCode,
         expiresAt: r.expiresAt,
         status: r.status,
-      })),
+      };
+    });
+
+    return NextResponse.json({
+      success: true,
+      reservations: richReservations,
     });
   } catch (err: any) {
     if (err.name === "ZodError") {
@@ -58,4 +71,3 @@ export async function POST(req: NextRequest) {
     }, { status });
   }
 }
-

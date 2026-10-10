@@ -189,7 +189,7 @@ function DashboardContent() {
 
             {/* Inventory Management */}
             <Link
-              href="/shop/inventory"
+              href={`/shop/inventory?s=${shopId}`}
               className="hidden lg:inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-bold text-[var(--text-secondary)] hover:text-[var(--text-primary)] bg-[var(--bg-surface-2)] hover:bg-[var(--bg-surface-3)] border border-[var(--border-sm)] transition-all shadow-[var(--shadow-xs)]"
             >
               <span>📦</span>
