@@ -15,13 +15,25 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     let reservation = null;
     if (request.status === "ACCEPTED") {
       reservation = db.prepare(`
-        SELECT r.*, i.name as productName, s.name as shopName, s.address as shopAddress
+        SELECT r.*, i.name as productName, i.imageEmoji, s.name as shopName, s.address as shopAddress
         FROM reservations r
         JOIN inventory i ON r.inventoryId = i.id
         JOIN shops s ON r.shopId = s.shopId
         WHERE r.requestId = ?
         LIMIT 1
       `).get(request.id);
+
+      if (!reservation) {
+        reservation = db.prepare(`
+          SELECT r.*, i.name as productName, i.imageEmoji, s.name as shopName, s.address as shopAddress
+          FROM reservations r
+          JOIN inventory i ON r.inventoryId = i.id
+          JOIN shops s ON r.shopId = s.shopId
+          WHERE r.customerPhone = ? AND r.inventoryId = ? AND r.shopId = ?
+          ORDER BY r.createdAt DESC
+          LIMIT 1
+        `).get(request.customerPhone, request.inventoryId, request.shopId);
+      }
     }
 
     const inv = db.prepare(`SELECT name, price FROM inventory WHERE id = ?`).get(request.inventoryId) as any;

@@ -40,14 +40,25 @@ export default function RequestStatusPage() {
     return () => clearInterval(interval);
   }, [req?.expiresAt, req?.status]);
 
-  // If request was accepted, redirect to the reservation page
+  // If request was accepted, save to account and redirect to the reservation page
   useEffect(() => {
     if (req?.status === "ACCEPTED" && req?.reservation?.id) {
+      if (typeof window !== "undefined") {
+        if (req.customerPhone) {
+          localStorage.setItem("shelfie_last_phone", req.customerPhone);
+        }
+        try {
+          const existing = JSON.parse(localStorage.getItem("shelfie_my_reservations") || "[]");
+          if (!existing.includes(req.reservation.id)) {
+            localStorage.setItem("shelfie_my_reservations", JSON.stringify([req.reservation.id, ...existing]));
+          }
+        } catch {}
+      }
       setTimeout(() => {
         router.push(`/reserve/${req.reservation.id}`);
-      }, 2000);
+      }, 3500);
     }
-  }, [req?.status, req?.reservation?.id, router]);
+  }, [req?.status, req?.reservation?.id, req?.customerPhone, router]);
 
   if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
   if (!req) return <div className="min-h-screen flex items-center justify-center">Not found</div>;
@@ -82,14 +93,41 @@ export default function RequestStatusPage() {
         )}
 
         {req.status === "ACCEPTED" && (
-          <div className="text-center space-y-6 py-6">
-            <div className="w-20 h-20 bg-[var(--green-bg)] text-[var(--green)] rounded-full flex items-center justify-center mx-auto mb-4 border border-[var(--green-border)]">
-              <svg className="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="text-center space-y-5 py-4">
+            <div className="w-16 h-16 bg-[var(--green-bg)] text-[var(--green)] rounded-full flex items-center justify-center mx-auto mb-2 border border-[var(--green-border)]">
+              <svg className="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-2xl font-bold text-[var(--text-primary)]">Request Accepted!</h2>
-            <p className="text-[var(--text-secondary)] text-sm">The shop is holding it for you.<br/>Redirecting to your pickup code...</p>
+            <div>
+              <h2 className="text-2xl font-black text-[var(--text-primary)]">Request Accepted!</h2>
+              <p className="text-[var(--text-secondary)] text-xs mt-1">
+                The shopkeeper has set aside your item at the counter.
+              </p>
+            </div>
+
+            {req.reservation?.pickupCode && (
+              <div className="bg-[var(--brand-50)] border-2 border-[var(--brand-400)] rounded-2xl p-4 my-2 text-center shadow-xs">
+                <div className="text-[10px] font-extrabold uppercase tracking-widest text-[var(--brand-700)]">
+                  Your 6-Digit Pickup Code
+                </div>
+                <div className="font-mono text-3xl sm:text-4xl font-black text-[var(--brand-600)] tracking-[0.25em] my-1">
+                  {req.reservation.pickupCode}
+                </div>
+                <div className="text-[11px] text-[var(--text-muted)] mt-1">
+                  Show this PIN at the counter to collect & pay
+                </div>
+              </div>
+            )}
+
+            <div className="pt-2">
+              <button
+                onClick={() => router.push(req.reservation?.id ? `/reserve/${req.reservation.id}` : "/cart?tab=reservations")}
+                className="btn btn-primary w-full !py-3 !text-xs !font-bold !rounded-xl"
+              >
+                Open Digital Boarding Pass →
+              </button>
+            </div>
           </div>
         )}
 

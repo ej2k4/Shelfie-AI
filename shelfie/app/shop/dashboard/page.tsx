@@ -78,11 +78,18 @@ function DashboardContent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ shopId, decision }),
       });
-      if (!res.ok) throw new Error("Failed to respond to request");
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(data.error || "Failed to respond to request");
+      return data;
     },
-    onSuccess: () => {
+    onSuccess: (data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["requests", shopId] });
       queryClient.invalidateQueries({ queryKey: ["notifications", shopId] });
+      queryClient.invalidateQueries({ queryKey: ["shop-reservations", shopId] });
+      queryClient.invalidateQueries({ queryKey: ["shop", shopId] });
+    },
+    onError: (err: any) => {
+      alert(`Could not process request: ${err.message}`);
     }
   });
 

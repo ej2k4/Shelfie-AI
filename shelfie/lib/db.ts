@@ -94,6 +94,7 @@ function initSchema(db: Database.Database) {
     CREATE INDEX IF NOT EXISTS idx_reservations_shop ON reservations(shopId);
     CREATE INDEX IF NOT EXISTS idx_reservations_code ON reservations(pickupCode);
     CREATE INDEX IF NOT EXISTS idx_reservations_status ON reservations(status);
+    CREATE INDEX IF NOT EXISTS idx_reservations_request ON reservations(requestId);
 
     CREATE TABLE IF NOT EXISTS requests (
       id TEXT PRIMARY KEY,
@@ -162,4 +163,8 @@ function initSchema(db: Database.Database) {
       ts TEXT NOT NULL
     );
   `);
+
+  try {
+    db.exec(`ALTER TABLE reservations ADD COLUMN requestId TEXT;`);
+  } catch {}
 }

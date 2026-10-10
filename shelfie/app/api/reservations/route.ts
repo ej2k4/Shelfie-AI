@@ -13,24 +13,34 @@ export async function GET(req: NextRequest) {
     }
 
     const db = getDb();
-    let reservations: any[] = [];
+    const reservationsMap = new Map<string, any>();
 
     if (phone) {
-      reservations = db.prepare(`
+      const cleanDigits = phone.replace(/\D/g, "");
+      const last10 = cleanDigits.slice(-10);
+      const phonePattern = last10.length >= 7 ? `%${last10}` : phone;
+
+      const phoneResults = db.prepare(`
         SELECT r.*, i.name as productName, i.price as productPrice, i.imageEmoji,
                s.name as shopName, s.address as shopAddress, s.lat as shopLat, s.lng as shopLng, s.phone as shopPhone
         FROM reservations r
         JOIN inventory i ON r.inventoryId = i.id
         JOIN shops s ON r.shopId = s.shopId
-        WHERE r.customerPhone = ?
+        WHERE r.customerPhone = ? OR r.customerPhone LIKE ?
         ORDER BY r.createdAt DESC
         LIMIT 30
-      `).all(phone);
-    } else if (idsParam) {
+      `).all(phone, phonePattern);
+
+      for (const item of phoneResults) {
+        reservationsMap.set((item as any).id, item);
+      }
+    }
+
+    if (idsParam) {
       const ids = idsParam.split(",").map(id => id.trim()).filter(Boolean);
       if (ids.length > 0) {
         const placeholders = ids.map(() => "?").join(",");
-        reservations = db.prepare(`
+        const idsResults = db.prepare(`
           SELECT r.*, i.name as productName, i.price as productPrice, i.imageEmoji,
                  s.name as shopName, s.address as shopAddress, s.lat as shopLat, s.lng as shopLng, s.phone as shopPhone
           FROM reservations r
@@ -40,8 +50,16 @@ export async function GET(req: NextRequest) {
           ORDER BY r.createdAt DESC
           LIMIT 30
         `).all(...ids);
+
+        for (const item of idsResults) {
+          reservationsMap.set((item as any).id, item);
+        }
       }
     }
+
+    const reservations = Array.from(reservationsMap.values()).sort(
+      (a: any, b: any) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+    );
 
     return NextResponse.json({ reservations });
   } catch (err) {

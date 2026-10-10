@@ -53,15 +53,17 @@ function CartContent() {
   const { data: resData, isLoading: resLoading, refetch: refetchReservations } = useQuery({
     queryKey: ["customer-reservations", activeCustomerPhone, storedIds.join(",")],
     queryFn: async () => {
-      let url = "";
-      if (activeCustomerPhone && activeCustomerPhone.length >= 10) {
-        url = `/api/reservations?phone=${encodeURIComponent(activeCustomerPhone)}`;
-      } else if (storedIds.length > 0) {
-        url = `/api/reservations?ids=${encodeURIComponent(storedIds.join(","))}`;
-      } else {
+      const params = new URLSearchParams();
+      if (activeCustomerPhone && activeCustomerPhone.length >= 7) {
+        params.set("phone", activeCustomerPhone);
+      }
+      if (storedIds.length > 0) {
+        params.set("ids", storedIds.join(","));
+      }
+      if (!params.has("phone") && !params.has("ids")) {
         return { reservations: [] };
       }
-      const res = await fetch(url);
+      const res = await fetch(`/api/reservations?${params.toString()}`);
       if (!res.ok) return { reservations: [] };
       return res.json();
     },

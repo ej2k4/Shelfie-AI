@@ -55,6 +55,10 @@ function RequestContent() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to request");
       
+      if (typeof window !== "undefined") {
+        localStorage.setItem("shelfie_last_phone", phone.trim());
+      }
+
       setSuccess(data);
       setTimeout(() => {
         router.push(`/request/${data.requestId}`);

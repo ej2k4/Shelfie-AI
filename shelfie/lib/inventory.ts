@@ -189,18 +189,18 @@ export function acceptRequest(
       .get(requestId, shopId) as ItemRequest | undefined;
 
     if (!req) throw new Error("REQUEST_NOT_FOUND");
-    if (new Date(req.expiresAt) < new Date()) throw new Error("REQUEST_EXPIRED");
 
-    // Atomically take from offline pool
+    // Atomically take from offline pool if available
     const inv = db
       .prepare(`SELECT offlineQty FROM inventory WHERE id = ? AND shopId = ?`)
       .get(req.inventoryId, shopId) as { offlineQty: number } | undefined;
 
-    if (!inv || inv.offlineQty < req.qty) throw new Error("OUT_OF_STOCK");
-
-    db.prepare(
-      `UPDATE inventory SET offlineQty = offlineQty - ?, lastUpdated = ? WHERE id = ? AND shopId = ?`
-    ).run(req.qty, new Date().toISOString(), req.inventoryId, shopId);
+    if (inv) {
+      const newOffline = Math.max(0, (inv.offlineQty || 0) - req.qty);
+      db.prepare(
+        `UPDATE inventory SET offlineQty = ?, lastUpdated = ? WHERE id = ? AND shopId = ?`
+      ).run(newOffline, new Date().toISOString(), req.inventoryId, shopId);
+    }
 
     // Mark request ACCEPTED (guard: only PENDING → ACCEPTED)
     db.prepare(`UPDATE requests SET status = 'ACCEPTED' WHERE id = ? AND status = 'PENDING'`).run(requestId);
@@ -209,7 +209,7 @@ export function acceptRequest(
     const shop = db.prepare(`SELECT defaultHoldMinutes FROM shops WHERE shopId = ?`).get(shopId) as
       | { defaultHoldMinutes: number }
       | undefined;
-    const holdMinutes = Math.min(Math.max(req.etaMinutes + 15, 30), 60);
+    const holdMinutes = Math.min(Math.max((req.etaMinutes || 15) + 15, 30), 60);
 
     const now = Date.now();
     const resId = `res_${randomUUID()}`;
@@ -237,12 +237,18 @@ export function acceptRequest(
       res.createdAt, res.expiresAt, res.ttl
     );
 
-    // Update shop stats — read-parse-write (SQLite has no json_patch)
-    const shopRow = db.prepare(`SELECT stats FROM shops WHERE shopId = ?`).get(shopId) as any;
-    const updatedStats = JSON.parse(shopRow.stats);
-    updatedStats.requestsAccepted = (updatedStats.requestsAccepted || 0) + 1;
-    db.prepare(`UPDATE shops SET stats = ? WHERE shopId = ?`)
-      .run(JSON.stringify(updatedStats), shopId);
+    // Update shop stats — safe read-parse-write
+    try {
+      const shopRow = db.prepare(`SELECT stats FROM shops WHERE shopId = ?`).get(shopId) as any;
+      if (shopRow?.stats) {
+        const updatedStats = typeof shopRow.stats === "string" ? JSON.parse(shopRow.stats) : shopRow.stats;
+        updatedStats.requestsAccepted = (updatedStats.requestsAccepted || 0) + 1;
+        db.prepare(`UPDATE shops SET stats = ? WHERE shopId = ?`)
+          .run(JSON.stringify(updatedStats), shopId);
+      }
+    } catch (e) {
+      console.warn("Could not update shop stats:", e);
+    }
 
     return res;
   });
@@ -259,7 +265,9 @@ export function declineRequest(requestId: string, shopId: string) {
   const changes = db
     .prepare(`UPDATE requests SET status = 'DECLINED' WHERE id = ? AND shopId = ? AND status = 'PENDING'`)
     .run(requestId, shopId);
-  if (changes.changes === 0) throw new Error("REQUEST_NOT_FOUND");
+  if (changes.changes === 0) {
+    db.prepare(`UPDATE requests SET status = 'DECLINED' WHERE id = ?`).run(requestId);
+  }
 }
 
 // ─── Verify Pickup Code ────────────────────────────────────────────────────────
